@@ -15,7 +15,8 @@ CSV = ROOT / "tasks" / "Telco_Customer_Churn_Dataset.csv"
 
 @pytest.fixture(scope="module")
 def client():
-    return TestClient(app)
+    with TestClient(app) as c:  # also exercises startup/shutdown lifespan
+        yield c
 
 
 @pytest.fixture(scope="module")

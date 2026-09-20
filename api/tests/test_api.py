@@ -1,4 +1,5 @@
-"""API tests: health, valid/invalid predictions, robustness."""
+"""API tests: health, valid/invalid predictions, robustness, failures."""
+import app as app_module
 
 
 def test_health(client):
@@ -43,9 +44,61 @@ def test_predict_missing_field_rejected(client, known_churner):
     assert client.post("/predict", json=bad).status_code == 422
 
 
+def test_health_reports_model_details(client):
+    body = client.get("/health").json()
+    assert body["status"] == "ok"
+    assert body["model"] == "LogisticRegression"
+    assert body["n_features"] == 18
+
+
+def test_model_loaded_once_and_reused(client, known_churner):
+    from app import load_bundle
+    first = load_bundle()
+    client.post("/predict", json=known_churner)
+    assert load_bundle() is first
+
+
 def test_predict_unknown_category_tolerated(client, known_churner):
     # encoder uses handle_unknown="ignore": unseen values must not crash
     weird = dict(known_churner, Contract="Weekly")
     r = client.post("/predict", json=weird)
     assert r.status_code == 200
     assert 0.0 <= r.json()["churn_probability"] <= 1.0
+
+
+def test_missing_model_predict_returns_503(client, known_churner, tmp_path,
+                                           monkeypatch):
+    monkeypatch.setattr(app_module, "MODEL_PATH", tmp_path / "nope.pkl")
+    monkeypatch.setattr(app_module, "_bundle", None)
+    r = client.post("/predict", json=known_churner)
+    assert r.status_code == 503
+    assert "train.py" in r.json()["detail"]
+
+
+def test_missing_model_health_reports_degraded(client, tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "MODEL_PATH", tmp_path / "nope.pkl")
+    monkeypatch.setattr(app_module, "_bundle", None)
+    body = client.get("/health").json()
+    assert body["model_loaded"] is False
+    assert body["status"] == "degraded"
+
+
+def test_corrupt_model_returns_clean_500(client, known_churner, tmp_path,
+                                         monkeypatch):
+    bad = tmp_path / "bad.pkl"
+    bad.write_bytes(b"not a pickle")
+    monkeypatch.setattr(app_module, "MODEL_PATH", bad)
+    monkeypatch.setattr(app_module, "_bundle", None)
+    r = client.post("/predict", json=known_churner)
+    assert r.status_code == 500
+    assert r.json() == {"detail": "model failed to load."}
+
+
+def test_threshold_env_changes_label(client, known_churner, monkeypatch):
+    # known churner scores 0.8193: movable threshold flips the label
+    monkeypatch.setenv("CHURN_THRESHOLD", "0.99")
+    assert client.post("/predict", json=known_churner).json()["churn"] == 0
+    monkeypatch.setenv("CHURN_THRESHOLD", "0.01")
+    assert client.post("/predict", json=known_churner).json()["churn"] == 1
+    monkeypatch.setenv("CHURN_THRESHOLD", "not-a-number")
+    assert client.post("/predict", json=known_churner).json()["churn"] == 1
