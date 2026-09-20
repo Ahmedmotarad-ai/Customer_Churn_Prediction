@@ -11,7 +11,7 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -114,7 +114,7 @@ def get_bundle():
 
 
 @app.get("/health")
-def health():
+def health(response: Response):
     info = {"status": "ok", "model_loaded": MODEL_PATH.exists()}
     if info["model_loaded"]:
         try:
@@ -127,6 +127,10 @@ def health():
             info.update(status="degraded", model_loaded=False)
     else:
         info["status"] = "degraded"
+    if info["status"] != "ok":
+        # degraded must fail container health probes (Docker/Render)
+        # instead of looking healthy while /predict returns 503
+        response.status_code = 503
     return info
 
 

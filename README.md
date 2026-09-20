@@ -59,7 +59,7 @@ probability}`.
 | model | accuracy | precision | recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|
 | LogisticRegression | 0.737 | 0.503 | **0.783** | **0.613** | **0.842** |
-| RandomForest | 0.779 | 0.622 | 0.484 | 0.537 | 0.821 |
+| RandomForest | 0.779 | 0.603 | 0.484 | 0.537 | 0.821 |
 
 Final model: **LogisticRegression** (catches 78% of churners vs 48%).
 CV: LogReg AUC 0.845±0.013 vs RF 0.821±0.013. Tuning: `C=10` → 0.846;
@@ -140,8 +140,9 @@ docker compose down
 ## Testing
 
 `api/tests/` — 16 pytest tests, all passing
-(`python -m pytest api/tests -v`, ~2 s), deterministic, no external
-services: health (+model details), response schema, known churner → 1,
+(`pip install -r api/requirements-dev.txt`, then
+`python -m pytest api/tests -v`, ~2 s), deterministic, no external
+services: health (+model details), response schema, flagged customer → 1,
 low-risk → 0, 2×422 rejections, unknown-category tolerance,
 missing-model 503, degraded health, corrupt-model 500, threshold env
 override, artifact structure, bounded probabilities, risk ordering.
@@ -159,7 +160,7 @@ Live public deployment on **Lightning AI** (Studio + public port):
   always-on service, Lightning's container deploy (same Dockerfile) is
   the next step.
 
-## Production Deployment
+## Cloud evaluation notes
 
 Render and Koyeb were evaluated first: Render's signup flow demanded a
 card for this account and Koyeb paused onboarding during its Mistral
@@ -171,8 +172,6 @@ and the same image runs anywhere Docker runs.
 ## Project Structure
 
 ```
-├── Customer_Churn_Prediction.ipynb   # combined notebook (backup)
-├── SKS Machine Learning Task.pdf
 ├── README.md  render.yaml  docker-compose.yml  .dockerignore
 ├── api/
 │   ├── app.py  train.py  requirements.txt  Dockerfile  model.pkl
@@ -188,10 +187,3 @@ and the same image runs anywhere Docker runs.
 Python 3.11 · scikit-learn 1.8.0 · pandas 3.0.3 · FastAPI 0.141.1 ·
 uvicorn 0.53.0 · pydantic 2.13.5 · pytest 8.3.3 · Docker 29.8 ·
 Lightning AI (deploy) · Render-ready config.
-
-## Submission notes
-
-- All 6 tasks complete (requirement: any 4).
-- Remaining per the task PDF: LinkedIn showcase video (tag SaiKet
-  Systems, hashtags #saiketsystems #saiket #saiketsys) + submission form
-  (to be shared).

@@ -20,7 +20,7 @@ def client():
 
 
 @pytest.fixture(scope="module")
-def known_churner():
+def flagged_customer():
     df = pd.read_csv(CSV)
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
     df.loc[df["tenure"] == 0, "TotalCharges"] = (
@@ -33,13 +33,13 @@ def known_churner():
 
 @pytest.fixture(scope="module")
 def low_risk():
-    return dict(known_churner_base(), tenure=70, InternetService="DSL",
+    return dict(customer_base(), tenure=70, InternetService="DSL",
                 Contract="Two year",
                 PaymentMethod="Credit card (automatic)",
                 MonthlyCharges=60.0, TotalCharges=4200.0)
 
 
-def known_churner_base():
+def customer_base():
     return dict(SeniorCitizen=0, Partner="Yes", Dependents="No",
                 PhoneService="Yes", MultipleLines="No",
                 OnlineSecurity="Yes", OnlineBackup="Yes",
