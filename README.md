@@ -147,6 +147,18 @@ low-risk → 0, 2×422 rejections, unknown-category tolerance,
 missing-model 503, degraded health, corrupt-model 500, threshold env
 override, artifact structure, bounded probabilities, risk ordering.
 
+## Demo UI (Streamlit)
+
+`ui/streamlit_app.py` — interactive demo for non-technical visitors:
+form with the same 18 fields and exact training categories, served by
+the same `model.pkl` as the API (no duplicated logic). Defaults mirror
+dataset row 0, so the first click reproduces the API result (`81.9%`).
+
+```bash
+pip install -r ui/requirements.txt
+streamlit run ui/streamlit_app.py   # http://localhost:8501
+```
+
 ## Deployment
 
 Live public deployment on **Lightning AI** (Studio + public port):
@@ -176,6 +188,8 @@ and the same image runs anywhere Docker runs.
 ├── api/
 │   ├── app.py  train.py  requirements.txt  Dockerfile  model.pkl
 │   └── tests/ (conftest, test_api, test_model)
+├── ui/
+│   └── streamlit_app.py  requirements.txt
 └── tasks/
     ├── Telco_Customer_Churn_Dataset.csv
     ├── Task1_..._Task6_*.ipynb
@@ -185,5 +199,5 @@ and the same image runs anywhere Docker runs.
 ## Technologies
 
 Python 3.11 · scikit-learn 1.8.0 · pandas 3.0.3 · FastAPI 0.141.1 ·
-uvicorn 0.53.0 · pydantic 2.13.5 · pytest 8.3.3 · Docker 29.8 ·
-Lightning AI (deploy) · Render-ready config.
+uvicorn 0.53.0 · pydantic 2.13.5 · pytest 8.3.3 · Streamlit 1.58.0 ·
+Docker 29.8 · Lightning AI (deploy) · Render-ready config.
